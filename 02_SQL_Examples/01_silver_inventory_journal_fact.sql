@@ -1,16 +1,16 @@
 /* ============================================================================
-   SILVER LAYER LOAD — Inventory Journal Transaction Fact
+   SILVER LAYER LOAD - Inventory Journal Transaction Fact
    ----------------------------------------------------------------------------
-   ILLUSTRATIVE EXAMPLE — artificial lakehouse, schema, and value details.
+   ILLUSTRATIVE EXAMPLE - artificial lakehouse, schema, and value details.
    Mirrors the transformation pattern used in the capstone project:
    bronze D365 F&O tables (landed via Azure Synapse Link) are joined,
    filtered by posting type, and materialized as a curated silver Delta table.
    ============================================================================ */
 
 -- Rebuild target table (full refresh pattern for demonstration)
-DROP TABLE IF EXISTS MFG_ANALYTICS.silver.InventoryJournalTransaction_Fact;
+DROP TABLE IF EXISTS MFG_ANALYTICS.silver.InventoryJournTrans;
 
-CREATE TABLE MFG_ANALYTICS.silver.InventoryJournalTransaction_Fact
+CREATE TABLE MFG_ANALYTICS.silver.InventoryJournTrans
 USING DELTA
 AS
 WITH stage AS (
@@ -20,12 +20,12 @@ WITH stage AS (
         gje.ACCOUNTINGDATE,
         gjae.TRANSACTIONCURRENCYAMOUNT,
         gjae.POSTINGTYPE
-    FROM mfg_prod.finop.GeneralJournalEntry            AS gje
-    JOIN mfg_prod.finop.GeneralJournalAccountEntry     AS gjae
-         ON gjae.GENERALJOURNALENTRY = gje.RECID
-    JOIN mfg_prod.finop.DimensionAttributeValueCombination AS davc
+    FROM mfg_prod.financeops.GeneralJourEntry            AS gje
+    JOIN mfg_prod.financeops.GeneralJournalAccountEntry     AS gjae
+         ON gjae.GeneralJourEntry = gje.RECID
+    JOIN mfg_prod.financeops.DimensionAttributeValueCombination AS davc
          ON gjae.LEDGERDIMENSION     = davc.RECID
-    JOIN mfg_prod.finop.MainAccount                    AS ma
+    JOIN mfg_prod.financeops.MainAccount                    AS ma
          ON davc.MAINACCOUNT         = ma.RECID
     WHERE gjae.POSTINGTYPE IN (93, 94)          -- inventory-related posting types
 )
@@ -45,7 +45,7 @@ GROUP BY MAINACCOUNTID, SUBLEDGERVOUCHER, CAST(ACCOUNTINGDATE AS DATE);
    Used for daily scheduled runs so only new/changed vouchers are processed.
    ============================================================================ */
 
-MERGE INTO MFG_ANALYTICS.silver.InventoryJournalTransaction_Fact AS tgt
+MERGE INTO MFG_ANALYTICS.silver.InventoryJournTrans AS tgt
 USING (
     SELECT
         ma.MAINACCOUNTID,
@@ -53,12 +53,12 @@ USING (
         CAST(gje.ACCOUNTINGDATE AS DATE)               AS TransactionDate,
         SUM(gjae.TRANSACTIONCURRENCYAMOUNT)            AS TransactionAmount,
         COUNT(*)                                       AS LineCount
-    FROM mfg_prod.finop.GeneralJournalEntry            AS gje
-    JOIN mfg_prod.finop.GeneralJournalAccountEntry     AS gjae
-         ON gjae.GENERALJOURNALENTRY = gje.RECID
-    JOIN mfg_prod.finop.DimensionAttributeValueCombination AS davc
+    FROM mfg_prod.financeops.GeneralJourEntry            AS gje
+    JOIN mfg_prod.financeops.GeneralJournalAccountEntry     AS gjae
+         ON gjae.GeneralJourEntry = gje.RECID
+    JOIN mfg_prod.financeops.DimensionAttributeValueCombination AS davc
          ON gjae.LEDGERDIMENSION     = davc.RECID
-    JOIN mfg_prod.finop.MainAccount                    AS ma
+    JOIN mfg_prod.financeops.MainAccount                    AS ma
          ON davc.MAINACCOUNT         = ma.RECID
     WHERE gjae.POSTINGTYPE IN (93, 94)
       AND gje.MODIFIEDDATETIME >= date_sub(current_date(), 3)  -- rolling window
