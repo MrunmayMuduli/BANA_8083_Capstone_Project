@@ -2,7 +2,7 @@
 
 **Student:** Mrunmay Muduli - MS in Business Analytics, University of Cincinnati
 **Capstone:** Business Intelligence Analytics at Nucor Business Technology
-**Readers:** Professor Rokey (first) | Mohammad Tahir Madni Mohammad, Nucor Business Technology (second)
+**Readers:** Professor Jeffrey Shaffer (first) | Caitlyn McDonald, Nucor Business Technology (second)
 
 ---
 
@@ -10,7 +10,7 @@
 
 The capstone project was performed on internal enterprise systems at Nucor
 Business Technology. Company policy does not permit sharing actual screenshots,
-code, or data externally. Per Professor Rokey's guidance, **all materials in
+code, or data externally. **all materials in
 this folder are recreated examples using fully fictional names, schemas, and
 data** that illustrate the structure, techniques, and tools used in the real
 implementation. No real system names, table names, column names, report names,
